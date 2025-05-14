@@ -1,15 +1,14 @@
-from ninja import Schema
+from ninja import Schema, ModelSchema
 from decimal import Decimal as decimal
 from datetime import datetime
+from .models import Bid
 
 
 class UserSchema(Schema):
     id: int
     username: str
     email: str
-    first_name: str
-    last_name: str
-
+    role: str
 
 
 class AuctionSchema(Schema):
@@ -17,12 +16,26 @@ class AuctionSchema(Schema):
     name: str
     slug: str
     current_price: decimal
+    created_by: str
+    is_active: bool
 
 
 
 class BidSchema(Schema):
-    user: UserSchema | None 
-    auction: AuctionSchema | None
+    id: int
+    user: UserSchema
+    auction: AuctionSchema
     amount: decimal
     timestamp: datetime
 
+class AuctionCreateSchema(Schema):
+    name:str
+    description: str
+    start_price: decimal
+    start_time: datetime
+    end_time: datetime
+    
+
+class BidCreateSchema(Schema):
+    amount: decimal
+    auction_id: int

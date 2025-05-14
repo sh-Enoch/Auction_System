@@ -7,8 +7,10 @@ from django.utils import timezone
 class CustomUser(AbstractUser):
     """AUthenicationa and authorization model. Add Roles to user"""
     ROLE_CHOICES = (
+        ('seller', "Seller"),
         ('admin', "Admin"),
-        ('user', 'User')
+        ('user', 'Bidder'),
+    
     )
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
