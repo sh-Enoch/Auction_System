@@ -16,14 +16,14 @@ class AuctionSchema(Schema):
     name: str
     slug: str
     current_price: decimal
-    created_by: str
+    created_by: UserSchema
     is_active: bool
 
 
 
 class BidSchema(Schema):
     id: int
-    user: UserSchema
+    user: UserSchema | None
     auction: AuctionSchema
     amount: decimal
     timestamp: datetime
