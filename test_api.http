@@ -1,0 +1,36 @@
+### Get all users
+GET http://localhost:8000/api/users/
+Accept: application/json
+
+### Create a new auction
+POST http://localhost:8000/api/auctions/
+Content-Type: application/json
+
+{
+  "name": "Antique Vase",
+  "description": "18th century Ming vase",
+  "start_price": 1200.00,
+  "start_time": "2025-06-01T10:00:00Z",
+  "end_time": "2025-06-05T10:00:00Z"
+}
+
+### Get all auctions
+GET http://localhost:8000/api/auctions/
+Accept: application/json
+
+### Get a single auction by slug
+GET http://localhost:8000/api/auctions/antique-vase/
+Accept: application/json
+
+### Create a bid
+POST http://localhost:8000/api/bids/
+Content-Type: application/json
+
+{
+  "amount": 1500.00,
+  "auction_id": 1
+}
+
+### Get all bids
+GET http://localhost:8000/api/bids/
+Accept: application/json
