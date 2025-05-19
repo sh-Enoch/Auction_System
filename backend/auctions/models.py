@@ -23,6 +23,7 @@ class Auction(models.Model):
     """Captures the information needed to control bidding and display auction state."""
     name = models.CharField(max_length=255, unique=True)
     slug = AutoSlugField(populate_from='name', unique=True)
+    image = models.ImageField(upload_to='auctions/', blank=True, null=True)
     description = models.TextField(max_length=1000)
     start_price = models.DecimalField(max_digits=10, decimal_places=2)
     current_price = models.DecimalField(max_digits=10, decimal_places=2)

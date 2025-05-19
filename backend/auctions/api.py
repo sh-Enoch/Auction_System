@@ -1,5 +1,6 @@
-from ninja import NinjaAPI
-from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema
+from ninja import NinjaAPI, File
+from ninja.files import UploadedFile
+from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, AuctionOutSchema
 from typing import List
 from .models import CustomUser, Auction, Bid
 from django.shortcuts import get_object_or_404
@@ -23,7 +24,7 @@ def list_users(request):
     return users
 
 
-@app.get("/auctions/", response=List[AuctionSchema])
+@app.get("/auctions/", response=List[AuctionOutSchema])
 def list_auctions(request):
     """
     Get a list of all auctions from the database.
@@ -55,7 +56,7 @@ def list_bids(request):
 
 
 @app.post("/auctions/", response=AuctionSchema)
-def create_auction(request, payload: AuctionCreateSchema):
+def create_auction(request, payload: AuctionCreateSchema, file: UploadedFile = File(...)):
     """
     Create a new auction in the database.
     
@@ -66,12 +67,15 @@ def create_auction(request, payload: AuctionCreateSchema):
     Returns: List[AuctionSchema]: A list of auctions.
         
     """
+  
     
     auction_raw = payload.dict()
     auction_raw["created_by"] = request.user
     auction_raw["current_price"] = auction_raw["start_price"]
     auction = Auction.objects.create(**auction_raw)
+    auction.image.save(file.name, file)
     auction.save()
+
     return auction
 
 
