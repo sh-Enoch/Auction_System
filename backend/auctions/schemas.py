@@ -2,6 +2,7 @@ from ninja import Schema, ModelSchema
 from decimal import Decimal as decimal
 from datetime import datetime
 from .models import Bid
+from typing import List 
 
 
 class UserSchema(Schema):
@@ -16,7 +17,7 @@ class AuctionSchema(Schema):
     name: str
     slug: str
     current_price: decimal
-    created_by: str
+    created_by: UserSchema
     is_active: bool
 
 
@@ -39,3 +40,8 @@ class AuctionCreateSchema(Schema):
 class BidCreateSchema(Schema):
     amount: decimal
     auction_id: int
+
+
+class UserDetailSchema(UserSchema):
+    bids: List[BidSchema] | None
+    auctions: List[AuctionSchema] | None

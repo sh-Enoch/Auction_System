@@ -1,120 +1,153 @@
 from ninja import NinjaAPI
-from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema
+from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema
 from typing import List
 from .models import CustomUser, Auction, Bid
 from django.shortcuts import get_object_or_404
+from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post
+
+app = NinjaExtraAPI()
 
 
-app = NinjaAPI()
-
-
-@app.get("/users/", response=List[UserSchema])
-def list_users(request):
-    """
-    Get a list of all users from the database.
-    
-    Args:
-        request: The HTTP request object.
+@api_controller("/users",  tags=["Users"], permissions=[])
+class UserController:
+    """" Controller for User operations """
+    @http_get("/", response=List[UserSchema])
+    def list_users(self, request):
+        """
+        Get a list of all users from the database.
         
-    Returns: List[UserSchema]: A list of users.
+        Args:
+            request: The HTTP request object.
+            
+        Returns: List[UserSchema]: A list of users.
 
-    """
-    users = CustomUser.objects.all()
-    return users
+        """
+        users = CustomUser.objects.all()
+        return users
 
-
-@app.get("/auctions/", response=List[AuctionSchema])
-def list_auctions(request):
-    """
-    Get a list of all auctions from the database.
+    @http_get("/me", response=UserDetailSchema)
+    def get_user(self, request):
     
-    Args:
-        request: The HTTP request object.
+       pass
+    
+       
+
+
+@api_controller("/auctions",  tags=["Auctions"], permissions=[])
+class AuctionController:
+    """Controller for Auction operations"""
+
+    @http_get("/", response=List[AuctionSchema])
+    def list_auctions(self, request):
+        """
+        Get a list of all auctions from the database.
         
-    Returns: List[AuctionSchema]: A list of auctions.
+        Args:
+            request: The HTTP request object.
+            
+        Returns: List[AuctionSchema]: A list of auctions.
 
-    """
-    auctions = Auction.objects.all()
-    return auctions
-
-
-@app.get("/bids/", response=List[BidSchema])
-def list_bids(request):
-    """
-    Get a list of all bids from the database.
+        """
+        auctions = Auction.objects.all()
+        return auctions
     
-    Args:
-        request: The HTTP request object.
+    @http_post("/create_auction/", response=AuctionSchema)
+    def create_auction(self, request, payload: AuctionCreateSchema):
+        """
+        Create a new auction in the database.
         
-    Returns: List[BidSchema]: A list of bids.
-
-    """
-    bids = Bid.objects.all()
-    return bids
-
-
-
-@app.post("/auctions/", response=AuctionSchema)
-def create_auction(request, payload: AuctionCreateSchema):
-    """
-    Create a new auction in the database.
-    
-    Args:
-        request: The HTTP request object.
-        payload: The data for the new auction.
+        Args:
+            request: The HTTP request object.
+            payload: The data for the new auction.
+            
+        Returns: List[AuctionSchema]: A list of auctions.
+            
+        """
         
-    Returns: List[AuctionSchema]: A list of auctions.
+        auction_raw = payload.dict()
+        auction_raw["created_by"] = request.user
+        auction_raw["current_price"] = auction_raw["start_price"]
+        auction = Auction.objects.create(**auction_raw)
+        auction.save()
+        return auction
+    
+    @http_get("/{slug}/", response=AuctionSchema)
+    def get_auction(self, request, slug: str):
+        """
+        Get a specific auction by its slug.
         
-    """
-    
-    auction_raw = payload.dict()
-    auction_raw["created_by"] = request.user
-    auction_raw["current_price"] = auction_raw["start_price"]
-    auction = Auction.objects.create(**auction_raw)
-    auction.save()
-    return auction
+        Args:
+            request: The HTTP request object.
+            slug: The slug of the auction to retrieve.
+            
+        Returns: AuctionSchema: The auction with the specified slug.
+
+        """
+        auction = get_object_or_404(Auction, slug=slug)
+        return auction
 
 
-@app.get("/auctions/{slug}/", response=AuctionSchema)
-def get_auction(request, slug: str):
-    """
-    Get a specific auction by its slug.
-    
-    Args:
-        request: The HTTP request object.
-        slug: The slug of the auction to retrieve.
+@api_controller("/bids",  tags=["Bids"], permissions=[])
+class BidController:
+    """Controller for Bid operations"""
+
+    @http_get("/", response=List[BidSchema])
+    def list_bids(self, request):
+        """
+        Get a list of all bids from the database.
         
-    Returns: AuctionSchema: The auction with the specified slug.
+        Args:
+            request: The HTTP request object.
+            
+        Returns: List[BidSchema]: A list of bids.
 
-    """
-    auction = get_object_or_404(Auction, slug=slug)
-    return auction
-
-
-@app.post("/bids/", response=BidSchema)
-def create_bid(request, bid: BidCreateSchema):
-    """
-    Create a new bid in the database.
+        """
+        bids = Bid.objects.all()
+        return bids
     
-    Args:
-        request: The HTTP request object.
-        bid: The data for the new bid.
+
+    @http_post("/bids/", response=BidSchema)
+    def create_bid(request, bid: BidCreateSchema):
+        """
+        Create a new bid in the database.
         
-    Returns: List[BidSchema]: A list of bids.
+        Args:
+            request: The HTTP request object.
+            bid: The data for the new bid.
+            
+        Returns: List[BidSchema]: A list of bids.
 
-    """
-    bid_raw = bid.dict()
-    bid_raw["user"] = request.user
-    bid_raw["auction"] = get_object_or_404(Auction, id=bid_raw.pop("auction_id"))
+        """
+        bid_raw = bid.dict()
+        bid_raw["user"] = request.user
+        bid_raw["auction"] = get_object_or_404(Auction, id=bid_raw.pop("auction_id"))
 
-    auction = bid_raw["auction"]
-    if bid_raw["amount"] <= auction.current_price:
-        return {"error": "Bid amount must be greater than the current price."}
+        auction = bid_raw["auction"]
+        if bid_raw["amount"] <= auction.current_price:
+            return {"error": "Bid amount must be greater than the current price."}
+        
+        bid = Bid.objects.create(**bid_raw)
+
+        # Update the auction's current price
+        auction.current_price = bid_raw["amount"]
+        bid.save()
+
+        return bid
     
-    bid = Bid.objects.create(**bid_raw)
+    @http_get("/{id}/", response=BidSchema)
+    def get_bid(self, request, id: int):
+        """
+        Get a specific bid by its ID.
+        
+        Args:
+            request: The HTTP request object.
+            id: The ID of the bid to retrieve.
+            
+        Returns: BidSchema: The bid with the specified ID.
 
-    # Update the auction's current price
-    auction.current_price = bid_raw["amount"]
-    bid.save()
+        """
+        bid = get_object_or_404(Bid, id=id)
+        return bid
 
-    return bid
+
+app.register_controllers(UserController, AuctionController, BidController)
