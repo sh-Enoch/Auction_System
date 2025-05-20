@@ -1,10 +1,11 @@
-from ninja import NinjaAPI
+from ninja import File
 from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema
 from typing import List
+from ninja.files import UploadedFile
 from .models import CustomUser, Auction, Bid
 from django.shortcuts import get_object_or_404
 from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post
-
+from datetime import datetime, timedelta
 app = NinjaExtraAPI()
 
 
@@ -52,7 +53,7 @@ class AuctionController:
         return auctions
     
     @http_post("/create_auction/", response=AuctionSchema)
-    def create_auction(self, request, payload: AuctionCreateSchema):
+    def create_auction(self, request, payload: AuctionCreateSchema, image: UploadedFile = File(...)):
         """
         Create a new auction in the database.
         
@@ -67,7 +68,17 @@ class AuctionController:
         auction_raw = payload.dict()
         auction_raw["created_by"] = request.user
         auction_raw["current_price"] = auction_raw["start_price"]
-        auction = Auction.objects.create(**auction_raw)
+
+                # Set default timestamps if not provided
+        if not auction_raw.get("start_time"):
+            auction_raw["start_time"] = datetime.now()
+        if not auction_raw.get("end_time"):
+            auction_raw["end_time"] = datetime.now() + timedelta(days=7)
+        
+        # Create auction with image
+        auction = Auction(**auction_raw)
+        if image:
+            auction.image.save(image.name, image)
         auction.save()
         return auction
     

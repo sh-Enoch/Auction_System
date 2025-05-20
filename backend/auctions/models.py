@@ -29,6 +29,7 @@ class Auction(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     created_by = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="auctions")
+    image = models.ImageField(upload_to="auctions/", blank=True, null=True)
 
 
     @property

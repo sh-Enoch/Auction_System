@@ -19,6 +19,13 @@ class AuctionSchema(Schema):
     current_price: decimal
     created_by: UserSchema
     is_active: bool
+    image_url: str | None
+
+    @staticmethod
+    def resolve_image_url(obj) -> str | None:
+        if obj.image:
+            return obj.image.url
+        return None
 
 
 
