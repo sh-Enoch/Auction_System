@@ -4,8 +4,10 @@ from typing import List
 from ninja.files import UploadedFile
 from .models import CustomUser, Auction, Bid
 from django.shortcuts import get_object_or_404
-from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post
+from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post, http_patch
 from datetime import datetime, timedelta
+from ninja.errors import HttpError
+from django.utils import timezone
 app = NinjaExtraAPI()
 
 
@@ -96,6 +98,44 @@ class AuctionController:
         """
         auction = get_object_or_404(Auction, slug=slug)
         return auction
+    
+
+    @http_patch("/{id}", response={200: AuctionSchema ,400: dict,  403: dict})
+    def set_auction_time(self, request, id: int, start_time: datetime = None, endtime: datetime = None):
+        """
+        Update the start and end time of an auction.
+        
+        Args:
+            request: The HTTP request object.
+            id: The ID of the auction to update.
+            start_time: The new start time for the auction.
+            end_time: The new end time for the auction.
+            
+        Returns: AuctionSchema: The updated auction.
+
+        """
+        auction = get_object_or_404(Auction, id=id)
+
+        if start_time:
+            if start_time < timezone.now():
+                return 400, {"error":"Start time cannot be in the past."}
+            auction.start_time = start_time
+
+        if endtime:
+        # End time must be after start time
+            if start_time:
+                min_end_time = start_time + timedelta(days=14) 
+            else:
+                auction.start_time
+            if endtime <= min_end_time:
+                return 400, {"error": "End time must be after start time"}
+            
+        if auction.end_time < timezone.now():
+            return 400, {"error": "Cannot update an auction that has already ended."}
+        
+
+        auction.save()
+        return 200, auction
 
 
 @api_controller("/bids",  tags=["Bids"], permissions=[])
