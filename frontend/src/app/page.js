@@ -1,18 +1,31 @@
 import Image from "next/image";
-import AuctionCard from "../components/AuctionCard";
-import { fetchAuctions } from "@/lib/api";
+import AuctionCard from "@/components/AuctionCard"; 
 
-export default async function HomePage() {
-  const auctions = await fetchAuctions();
-
+export default function Home() {
   return (
-    <main>
-      <h1 className="text-2xl text-center p-5">Live Auctions</h1>
-      <div className="flex flex-wrap justify-center gap-4 p-5">
-        {auctions.map((auction) => (
-          <AuctionCard key={auction.id} auction={auction}/>
-        ))}
+    <div className="">
+      <h1 className="p-4">Auctions</h1>
+
+      <hr />
+      <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6">
+      <AuctionCard
+        title="Vintage Camera"
+        description="A rare 1970s film camera in excellent condition."
+        price="120.00"
+      />
+
+      <div className="mt-6">
+        <AuctionCard
+          title="Gaming Laptop"
+          description="High-performance laptop perfect for gaming and development."
+          price="950.00"
+        />
       </div>
     </main>
-  )
+
+
+
+
+    </div>
+  );
 }

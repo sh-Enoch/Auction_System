@@ -1,8 +1,9 @@
-export async function fetchAuctions() {
-    const res = await fetch("http://localhost:8000/api/auctions/");
+export default async function fetchAuctions() {
+    const res = await fetch("localhost:8000/api/auctions/");
+    const auctions = await res.json();
 
     if (!res.ok) {
-        throw new Error("Failed to fetch auctions");
+        throw new Error("Failed to fetch data");
     }
-    return res.json();
-}
+    return auctions;
+} 
