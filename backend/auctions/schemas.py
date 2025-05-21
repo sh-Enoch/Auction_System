@@ -11,6 +11,15 @@ class UserSchema(Schema):
     email: str
     role: str
 
+class UserCreateSchema(Schema):
+    username: str
+    email: str
+    password: str
+    role: str | None = "user"
+
+    @staticmethod
+    def resolve_role(obj) -> str:
+        return obj.role if obj.role else "user"
 
 class AuctionSchema(Schema):
     id: int

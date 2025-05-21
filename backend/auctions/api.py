@@ -1,5 +1,5 @@
 from ninja import File
-from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema
+from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema, UserCreateSchema
 from typing import List
 from ninja.files import UploadedFile
 from .models import CustomUser, Auction, Bid
@@ -8,13 +8,78 @@ from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post, http
 from datetime import datetime, timedelta
 from ninja.errors import HttpError
 from django.utils import timezone
+from .permissions import IsAdmin, IsSeller, IsUser, IsAdminOrSeller, IsAdminOrUser
+from ninja_extra import permissions
+
 app = NinjaExtraAPI()
 
 
 @api_controller("/users",  tags=["Users"], permissions=[])
 class UserController:
     """" Controller for User operations """
-    @http_get("/", response=List[UserSchema])
+
+    @http_post("register/", response=UserSchema, permissions=[permissions.AllowAny])
+    def register_user(self, request, payload: UserCreateSchema):
+        """
+        Register a new user in the database.
+        
+        Args:
+            request: The HTTP request object.
+            payload: The data for the new user.
+            
+        Returns: UserSchema: The newly registered user.
+
+        """
+        user_raw = payload.dict()
+        user_raw["role"] = "user"
+        user = CustomUser(**user_raw)
+        user.set_password(user_raw["password"])
+        user.save()
+        return user
+    
+    @http_get("/me", response=UserSchema, permissions=[permissions.IsAuthenticated])
+    def get_user(self, request):
+        """
+        Get the current authenticated user.
+
+        Args:
+
+            request: The HTTP request object.
+
+        Returns: UserSchema: The current authenticated user.
+        """
+        user = request.user
+        if not user:
+            return 404, {"error": "User not found."}
+        return user
+       
+    
+    
+    
+    @http_post("register_role/{id}/", response=UserSchema, permissions=[])
+    def register_user_role(self, request, role: str, id: int, payload: UserCreateSchema):
+        """
+        Register a new user with a specific role in the database.
+        
+        Args:
+            request: The HTTP request object.
+            role: The role to assign to the user.
+            id: The ID of the user to update.
+            
+        Returns: UserSchema: The updated user.
+
+        """
+        user = get_object_or_404(CustomUser, id=id)
+        
+        if role not in ["admin", "seller", "user"]:
+            return 400, {"error": "Invalid role."}
+        
+        user.role = role
+        user.save()
+        return user
+
+    
+    @http_get("/", response=List[UserSchema], permissions=[IsAdmin])
     def list_users(self, request):
         """
         Get a list of all users from the database.
@@ -28,10 +93,7 @@ class UserController:
         users = CustomUser.objects.all()
         return users
 
-    @http_get("/me", response=UserDetailSchema)
-    def get_user(self, request):
-    
-       pass
+
     
        
 
@@ -40,7 +102,7 @@ class UserController:
 class AuctionController:
     """Controller for Auction operations"""
 
-    @http_get("/", response=List[AuctionSchema])
+    @http_get("/", response=List[AuctionSchema], permissions=[permissions.IsAuthenticatedOrReadOnly])
     def list_auctions(self, request):
         """
         Get a list of all auctions from the database.
@@ -54,7 +116,7 @@ class AuctionController:
         auctions = Auction.objects.all()
         return auctions
     
-    @http_post("/create_auction/", response=AuctionSchema)
+    @http_post("/create_auction/", response=AuctionSchema, permissions=[IsAdminOrSeller])
     def create_auction(self, request, payload: AuctionCreateSchema, image: UploadedFile = File(...)):
         """
         Create a new auction in the database.
@@ -84,7 +146,7 @@ class AuctionController:
         auction.save()
         return auction
     
-    @http_get("/{slug}/", response=AuctionSchema)
+    @http_get("/{slug}/", response=AuctionSchema, permissions=[permissions.IsAuthenticatedOrReadOnly])
     def get_auction(self, request, slug: str):
         """
         Get a specific auction by its slug.
@@ -100,7 +162,7 @@ class AuctionController:
         return auction
     
 
-    @http_patch("/{id}", response={200: AuctionSchema ,400: dict,  403: dict})
+    @http_patch("/{id}", response={200: AuctionSchema ,400: dict,  403: dict}, permissions=[IsAdminOrSeller])
     def set_auction_time(self, request, id: int, start_time: datetime = None, endtime: datetime = None):
         """
         Update the start and end time of an auction.
@@ -116,6 +178,9 @@ class AuctionController:
         """
         auction = get_object_or_404(Auction, id=id)
 
+        if auction.created_by != request.user and request.user.role != "admin":
+            return 403, {"error": "You do not have permission to update this auction."}
+
         if start_time:
             if start_time < timezone.now():
                 return 400, {"error":"Start time cannot be in the past."}
@@ -127,9 +192,12 @@ class AuctionController:
                 min_end_time = start_time + timedelta(days=14) 
             else:
                 auction.start_time
-            if endtime <= min_end_time:
-                return 400, {"error": "End time must be after start time"}
-            
+            min_increment = auction.start_time + timedelta(hours=1)  # At least 1 hour duration
+            if endtime <= min_increment:
+                    return 400, {
+                            "error": f"Auction must last at least 1 hour (end after {min_increment.isoformat()})"
+            }
+
         if auction.end_time < timezone.now():
             return 400, {"error": "Cannot update an auction that has already ended."}
         
@@ -142,7 +210,7 @@ class AuctionController:
 class BidController:
     """Controller for Bid operations"""
 
-    @http_get("/", response=List[BidSchema])
+    @http_get("/", response=List[BidSchema], permissions=[permissions.IsAuthenticatedOrReadOnly])
     def list_bids(self, request):
         """
         Get a list of all bids from the database.
@@ -157,8 +225,8 @@ class BidController:
         return bids
     
 
-    @http_post("/bids/", response=BidSchema)
-    def create_bid(request, bid: BidCreateSchema):
+    @http_post("/bids/", response=BidSchema, permissions=[IsAdminOrUser])
+    def create_bid(self, request, bid: BidCreateSchema):
         """
         Create a new bid in the database.
         
@@ -185,7 +253,7 @@ class BidController:
 
         return bid
     
-    @http_get("/{id}/", response=BidSchema)
+    @http_get("/{id}/", response=BidSchema, permissions=[permissions.IsAuthenticatedOrReadOnly])
     def get_bid(self, request, id: int):
         """
         Get a specific bid by its ID.
