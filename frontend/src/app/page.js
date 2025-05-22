@@ -1,53 +1,40 @@
-"use client"; // Add this line to mark as a Client Component
+"use client";
+import { fetchAuctions } from "@/lib/api";
+import AuctionCard from "@/components/AuctionCard"; 
 
-import { useEffect, useState } from "react";
-import AuctionCard from "@/components/AuctionCard";
-import { fetchAuctions } from "@/lib/api"; // Assuming api.js is in lib folder
 
-export default function Home() {
-  const [auctions, setAuctions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export default async function Home() {
 
-  useEffect(() => {
-    const loadAuctions = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchAuctions();
-        setAuctions(data);
-        setError(null); // Clear any previous errors
-      } catch (err) {
-        setError("Failed to load auctions.");
-        console.error(err); // Log the error for debugging
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAuctions();
-  }, []); // Empty dependency array means this effect runs once on mount
+  const auctions = await fetchAuctions();
 
   return (
-    <div>
-      <h1 className="p-4 text-center text-2xl font-bold">Auctions</h1>
-      <hr />
-      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 bg-gray-50 min-h-screen">
-        {loading && <p className="text-center col-span-full">Loading auctions...</p>}
-        {error && <p className="text-center text-red-500 col-span-full">Error: {error}</p>}
-        {!loading && !error && auctions.length === 0 && (
-          <p className="text-center col-span-full">No auctions available at the moment.</p>
-        )}
-        {!loading && !error &&
-          auctions.map((auction) => (
-            <AuctionCard
-              key={auction.id} // Assuming each auction has a unique id
-              title={auction.title}
-              description={auction.description}
-              price={auction.currentPrice} // Assuming price is currentPrice
-              // imageUrl={auction.imageUrl} // Assuming you have an imageUrl
-            />
-          ))}
-      </main>
+<div className="min-h-screen bg-gray-50">
+  {/* Header/Navbar */}
+  <header className="bg-white shadow-sm">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+      <h1 className="text-2xl font-bold text-indigo-600">Auctions</h1>
+      <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+        Login
+      </button>
     </div>
-  );
-}
+  </header>
+
+  {/* Main Content */}
+  <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {/* Page Title */}
+    <div className="mb-8">
+      <h2 className="text-3xl font-extrabold text-gray-900">Current Auctions</h2>
+      <p className="mt-2 text-lg text-gray-600">
+        Browse our collection of exclusive items up for bid
+      </p>
+    </div>
+
+    {/* Auction Grid */}
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {auctions.map((auction) => (
+        <AuctionCard 
+          key={auction.id} 
+          auction={auction}
+          className="transform transition-all hover:scale-[1.02] hover:shadow-lg"
+        />
+      ))}
