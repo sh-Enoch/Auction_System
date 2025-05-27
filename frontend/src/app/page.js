@@ -1,22 +1,30 @@
 import { fetchAuctions } from "@/lib/api";
 import AuctionCard from "@/components/AuctionCard"; 
+import { SignupForm } from "@/app/ui/signup-form";
 
 
 export default async function Home() {
 
-  const auctions = await fetchAuctions();
+  const auctions = await fetchAuctions("/api/auctions/");
 
   return (
 <div className="min-h-screen bg-gray-50">
   {/* Header/Navbar */}
-  <header className="bg-white shadow-sm">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-      <h1 className="text-2xl font-bold text-indigo-600">Auctions</h1>
-      <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-        Login
-      </button>
-    </div>
-  </header>
+  // In your header
+<div className="flex gap-4">
+  <Link 
+    href="/signup"
+    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+  >
+    Sign Up
+  </Link>
+  <Link
+    href="/login"
+    className="px-4 py-2 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50"
+  >
+    Login
+  </Link>
+</div>
 
   {/* Main Content */}
   <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -32,7 +40,7 @@ export default async function Home() {
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {auctions.map((auction) => (
         <AuctionCard 
-          key={auction.id} 
+          key={auction.slug} 
           auction={auction}
           className="transform transition-all hover:scale-[1.02] hover:shadow-lg"
         />
