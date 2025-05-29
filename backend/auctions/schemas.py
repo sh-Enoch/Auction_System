@@ -11,6 +11,10 @@ class UserSchema(Schema):
     email: str
     role: str
 
+class AuthSchema(Schema):
+    email: str
+    password: str
+
 class UserCreateSchema(Schema):
     username: str
     email: str

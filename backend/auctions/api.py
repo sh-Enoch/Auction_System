@@ -1,41 +1,77 @@
 from ninja import File
-from .schemas import UserSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema, UserCreateSchema
+from .schemas import UserSchema,AuthSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema, UserCreateSchema
 from typing import List
 from ninja.files import UploadedFile
 from .models import CustomUser, Auction, Bid
 from django.shortcuts import get_object_or_404
-from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post, http_patch
+from ninja_extra import NinjaExtraAPI, api_controller, http_get, http_post, http_patch, route
 from datetime import datetime, timedelta
 from ninja.errors import HttpError
 from django.utils import timezone
 from .permissions import IsAdmin, IsSeller, IsUser, IsAdminOrSeller, IsAdminOrUser
 from ninja_extra import permissions
+from django.contrib.auth import get_user_model
+from ninja.security import HttpBearer
+from django.contrib.auth import authenticate
+
 
 app = NinjaExtraAPI()
 
 
-@api_controller("/users",  tags=["Users"], permissions=[])
-class UserController:
-    """" Controller for User operations """
+User = get_user_model()
 
-    @http_post("register/", response=UserSchema, permissions=[permissions.AllowAny])
-    def register_user(self, request, payload: UserCreateSchema):
+class AuthBearer(HttpBearer):
+    def authenticate(self, request, token):
+        try:
+            return User.objects.get(auth_token=token)
+        except:
+            return None
+        
+
+
+
+
+@api_controller("/auth", tags=['Auth'])
+class AuthController:
+    @route.post('/register' , response={201: UserSchema, 400: dict})
+    def register(self, payload: UserCreateSchema):
         """
-        Register a new user in the database.
+        Register a new user.
         
         Args:
-            request: The HTTP request object.
             payload: The data for the new user.
             
         Returns: UserSchema: The newly registered user.
 
         """
-        user_raw = payload.dict()
-        user_raw["role"] = "user"
-        user = CustomUser(**user_raw)
-        user.set_password(user_raw["password"])
-        user.save()
-        return user
+        if CustomUser.objects.filter(email=payload.email).exists():
+            return {"error": "User with this email already exists."}
+        
+        user = CustomUser.objects.create_user(
+            username=payload.username,
+            email=payload.email,
+            password=payload.password,
+            role=payload.role or "user"  # Default to "user" if no role is provided
+        )
+        return 201, user
+    
+    @route.post("/login")
+    def login(self, payload: AuthSchema):
+        user = authenticate(email=payload.email, password=payload.password)
+        if not user:
+            return {"error": "Invalid credentials."}
+        
+        token = user.auth_token
+        return {
+            'token': token,
+        }
+
+
+
+
+@api_controller("/users",  tags=["Users"], permissions=[])
+class UserController:
+    """" Controller for User operations """
     
     @http_get("/me", response=UserSchema, permissions=[permissions.IsAuthenticated])
     def get_user(self, request):
@@ -269,4 +305,4 @@ class BidController:
         return bid
 
 
-app.register_controllers(UserController, AuctionController, BidController)
+app.register_controllers(UserController, AuctionController, BidController, AuthController)
