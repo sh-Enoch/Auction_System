@@ -1,3 +1,4 @@
+"use client";
 import { fetchAuctions } from "@/lib/api";
 import AuctionCard from "@/components/AuctionCard"; 
 import Link from "next/link";
