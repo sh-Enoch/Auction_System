@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +23,43 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+         <header className="bg-blue-50 text-2xl">
+                <div className="max-w-screen-2xl flex flex-wrap items-center justify-between mx-auto p-4">
+                  <Link href='/' className="text-2xl font-black text-gray-950">AS</Link>
+                  <nav>
+                  <ul className="flex space-x-3  p-2">
+                      <li>
+                        <Link href="" className="text-gray-950 font-bold hover:text-blue-600">Login</Link>
+                      </li>
+                      <li>
+                        <Link href="/register" className="text-gray-950 font-bold hover:text-blue-600">Register</Link>
+                      </li>
+                  </ul>
+                  </nav>
+                </div>
+              </header>
+              <hr className="bg-gray-300"/>
         {children}
+
+              <footer className="bg-gray-800 shadow-sm rounded-lg ">
+        <div className="w-full mx-auto max-w-screen-2xl p-4 md:flex md:justify-between ">
+          <span  className="text-sm text-gray-500 ">
+            &copy; 2025 Auction System. All rights reserved.
+          </span>
+          <ul className="flex flex-wrap items-center  text-sm font-medium text-gray-500">
+            <li>
+              <a href="#" className="mr-4 hover:underline md:mr-6 ">About</a>
+            </li>
+            <li>
+              <a href="#" className="mr-4 hover:underline md:mr-6 ">Privacy Policy</a>
+            </li>
+            <li>
+              <a href="#" className="mr-4 hover:underline md:mr-6 ">Licensing</a>
+            </li>
+          </ul>
+        </div>
+        
+         </footer>
       </body>
     </html>
   );

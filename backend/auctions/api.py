@@ -33,7 +33,7 @@ class AuthBearer(HttpBearer):
 
 @api_controller("/auth", tags=['Auth'])
 class AuthController:
-    @route.post('/register' , response={201: UserSchema, 400: dict})
+    @route.post('/register' , response={range(200, 299): UserSchema, 400: dict})
     def register(self, payload: UserCreateSchema):
         """
         Register a new user.

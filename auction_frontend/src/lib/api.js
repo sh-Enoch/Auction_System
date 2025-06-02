@@ -1,16 +1,16 @@
 export default async function fetchAuctions() {
     const url = "http://localhost:8000/api/auctions/";
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, {cache: 'no-store'});
         if (!res.ok) {
             throw new Error(`Could not fetch auctions: ${res.error}`);
         }
         const data = await res.json();
         return data;
-        
+
     } catch (err) {
         return {
             error: err.message,
         };
-    }
+    } 
 }
