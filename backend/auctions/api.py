@@ -1,5 +1,5 @@
 from ninja import File
-from .schemas import UserSchema,AuthSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema, UserCreateSchema
+from .schemas import UserSchema,AuthSchema, AuctionSchema, BidSchema, AuctionCreateSchema, BidCreateSchema, UserDetailSchema, UserCreateSchema, ErrorResponse, SuccessResponse
 from typing import List
 from ninja.files import UploadedFile
 from .models import CustomUser, Auction, Bid
@@ -33,7 +33,10 @@ class AuthBearer(HttpBearer):
 
 @api_controller("/auth", tags=['Auth'])
 class AuthController:
-    @route.post('/register' , response={range(200, 299): UserSchema, 400: dict})
+    @route.post('/register' , response={201: SuccessResponse,
+                                        400:  ErrorResponse,
+                                        409: ErrorResponse,
+                                        })
     def register(self, payload: UserCreateSchema):
         """
         Register a new user.
@@ -44,16 +47,21 @@ class AuthController:
         Returns: UserSchema: The newly registered user.
 
         """
-        if CustomUser.objects.filter(email=payload.email).exists():
-            return {"error": "User with this email already exists."}
+        email = payload.email.lower()
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            return 409, {"detail": "User with this email already exists."}
         
-        user = CustomUser.objects.create_user(
-            username=payload.username,
-            email=payload.email,
-            password=payload.password,
-            role=payload.role or "user"  # Default to "user" if no role is provided
-        )
-        return 201, user
+        try:
+            user = CustomUser.objects.create_user(
+                username=payload.username,
+                email=email,
+                password=payload.password,
+                role = payload.role or 'user'
+            )
+            return 201,  {"detail": "User created successfully." , "user": UserSchema.from_orm(user)}
+        
+        except Exception as e:
+            return 400, {"detail": "invalid data provided."}
     
     @route.post("/login")
     def login(self, payload: AuthSchema):

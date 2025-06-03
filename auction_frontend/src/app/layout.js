@@ -25,11 +25,11 @@ export default function RootLayout({ children }) {
       >
          <header className="bg-blue-50 text-2xl">
                 <div className="max-w-screen-2xl flex flex-wrap items-center justify-between mx-auto p-4">
-                  <Link href='/' className="text-2xl font-black text-gray-950">AS</Link>
+                  <Link href='' className="text-2xl font-black text-gray-950">AS</Link>
                   <nav>
                   <ul className="flex space-x-3  p-2">
                       <li>
-                        <Link href="" className="text-gray-950 font-bold hover:text-blue-600">Login</Link>
+                        <Link href="/login" className="text-gray-950 font-bold hover:text-blue-600">Login</Link>
                       </li>
                       <li>
                         <Link href="/register" className="text-gray-950 font-bold hover:text-blue-600">Register</Link>

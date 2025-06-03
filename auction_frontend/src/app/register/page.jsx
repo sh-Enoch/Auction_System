@@ -2,12 +2,12 @@
 import React from 'react'
 import Link from 'next/link';
 import  { useState } from 'react';
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation';
 
 
 function Register() {
 
-
+    const router = useRouter();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -23,6 +23,9 @@ function Register() {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmedPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [apiError, setApiError] = useState(''); // State to hold API error messages
+    const[isSuccess, setIsSuccess] = useState(false); // State to hold success message
     
 
 
@@ -122,10 +125,12 @@ function Register() {
     }
     const handleSubmit = (e) => {
         e.preventDefault();
+        setApiError(''); // Reset API error state
         // Add your form submission logic here
         
 
         if (validateForm()) {
+            setIsSubmitting(true); // Set submitting state to true
             console.log("Form is valid, submitting...", formData);
 
             // Here you would typically send the form data to your backend API
@@ -140,23 +145,19 @@ function Register() {
                     },
                     body: JSON.stringify(submitData)
                 }
-            ).then(
-                resp => resp.json()
-            ).then(
-                data => {
-                    if(data.success) {
-                        console.log("Registration successful:", data);
-                        // Redirect to login or home page
-                        Router.push('/login');
-                    } else {
-                        console.error("Registration failed:", data);
-                        setError({ ...error, general: data.error || 'Registration failed. Please try again.' });
-                    }
+            ).then( response => {
+                if (!response.ok) {
+                    return response.json().then( errData => { 
+                        throw new Error(errData.detail || 'Failed to register');
+                    });  
                 }
-            ).catch(
-                err => {
-                console.error("Error during registration:", err);
-                setError({ ...error, general: 'Registration failed. Please try again.' });
+                return response.json();
+            }).then( data => {
+                setIsSuccess(true); // Set success state
+                setTimeout(() => router.push('/login'), 2000) // Redirect to login page on success
+            }).catch(err => {
+                setApiError(err.message || 'An error occurred during registration');
+                setIsSubmitting(false); // Reset submitting state
             });
 
         }
@@ -275,8 +276,24 @@ function Register() {
                     </div>
                     {error.confirmPassword && <p className="text-red-500 text-sm">{error}</p>}
 
-                    <button 
-                    className='w-full text-white bg-blue-600 hover:bg-blue-800 focus:ring-4  focus:outline-none font-medium text-sm px-5 py-2.5 text-center rounded-lg'> Create an account</button>
+                    <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full text-white bg-blue-600 hover:bg-blue-800 focus:ring-4 focus:outline-none font-medium text-sm px-5 py-2.5 text-center rounded-lg ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} >
+                        Create an account
+                    </button>
+                    {isSuccess && (
+                         <div className="p-4 mb-4 text-green-700 bg-green-100 rounded-lg">
+                            Account created successfully! Redirecting to login...
+                        </div>
+                    )}
+                    {apiError && (
+                        <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
+                            {apiError}
+                        </div>
+                    )}
+
 
                 </form> 
                  

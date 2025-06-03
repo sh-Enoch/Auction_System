@@ -65,3 +65,10 @@ class BidCreateSchema(Schema):
 class UserDetailSchema(UserSchema):
     bids: List[BidSchema] | None
     auctions: List[AuctionSchema] | None
+
+class ErrorResponse(Schema):
+    detail: str
+
+class SuccessResponse(Schema):
+    detail: str
+    user: UserSchema  # Nested schema
