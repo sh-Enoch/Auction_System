@@ -12,7 +12,7 @@ class UserSchema(Schema):
     role: str
 
 class AuthSchema(Schema):
-    email: str
+    email : str
     password: str
 
 class UserCreateSchema(Schema):
@@ -68,6 +68,7 @@ class UserDetailSchema(UserSchema):
 
 class ErrorResponse(Schema):
     detail: str
+
 
 class SuccessResponse(Schema):
     detail: str

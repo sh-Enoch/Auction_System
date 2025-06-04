@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'auctions',
     'ninja_extra',
     'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
 
 ]
 
@@ -109,7 +111,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+AUTHENTICATION_BACKENDS = [
+    'auctions.backends.EmailAuthBackend',  # Custom authentication backend
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

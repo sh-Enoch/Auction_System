@@ -63,16 +63,28 @@ class AuthController:
         except Exception as e:
             return 400, {"detail": "invalid data provided."}
     
-    @route.post("/login")
+    @route.post("/login", response={
+        200: dict,
+        400: ErrorResponse,
+        401: ErrorResponse
+    })
     def login(self, payload: AuthSchema):
-        user = authenticate(email=payload.email, password=payload.password)
-        if not user:
-            return {"error": "Invalid credentials."}
+        email = payload.email.lower()
         
-        token = user.auth_token
-        return {
-            'token': token,
+        user = authenticate(email= email, password=payload.password)
+        if not user:
+            return 401, {"detail": "Invalid credentials."}
+        from rest_framework.authtoken.models import Token
+        token, _ = Token.objects.get_or_create(user=user)
+        
+        return 200,{
+            'username': user.username,
+            'token': token.key,
+            "user_id": user.id,
+            "role": user.role
+            
         }
+
 
 
 
